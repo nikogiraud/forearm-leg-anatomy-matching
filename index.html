@@ -234,16 +234,46 @@
       pointer-events: none;
     }
 
+    .source-number-mask {
+      position: absolute;
+      z-index: 1;
+      width: 46px;
+      height: 28px;
+      border-radius: 8px;
+      background: #ffffff;
+      pointer-events: none;
+    }
+
+    .source-number-mask.left {
+      transform: translate(-72%, -50%);
+    }
+
+    .source-number-mask.right {
+      transform: translate(-28%, -50%);
+    }
+
+    .hotspot-connector {
+      position: absolute;
+      z-index: 2;
+      width: 2px;
+      transform: translateX(-50%);
+      border-radius: 999px;
+      background: var(--primary);
+      pointer-events: none;
+    }
+
     .hotspot {
       position: absolute;
-      width: clamp(28px, 4.6%, 38px);
+      z-index: 3;
+      width: clamp(34px, 5.8%, 42px);
       aspect-ratio: 1;
       transform: translate(-50%, -50%);
       border: 2px solid var(--primary);
       border-radius: 50%;
       background: #ffffff;
       color: var(--primary);
-      font-size: clamp(0.62rem, 1.3vw, 0.8rem);
+      font-size: clamp(0.78rem, 1.65vw, 0.95rem);
+      line-height: 1;
       font-weight: 700;
       cursor: pointer;
       pointer-events: auto;
@@ -1322,13 +1352,98 @@
         return chip;
       }
 
-      function makeHotspot([number, sourceX, sourceY]) {
+      function layoutHotspots() {
+        const layerHeight = hotspotLayer.clientHeight;
+        if (!layerHeight) return;
+
+        const renderedHotspots = [...hotspotLayer.querySelectorAll(".hotspot")];
+        if (!renderedHotspots.length) return;
+
+        const markerSize = Math.max(
+          ...renderedHotspots.map(marker => marker.getBoundingClientRect().width),
+          34
+        );
+        const minimumGap = markerSize + 4;
+        const minimumY = (markerSize / 2) + 3;
+        const maximumY = layerHeight - minimumY;
+
+        ["left", "right"].forEach(side => {
+          const markers = renderedHotspots
+            .filter(marker => marker.dataset.side === side)
+            .map(marker => ({
+              marker,
+              desiredY: (Number(marker.dataset.sourceY) / activeFigure.height) * layerHeight
+            }))
+            .sort((a, b) => a.desiredY - b.desiredY);
+
+          if (!markers.length) return;
+
+          const positions = markers.map(item => Math.max(minimumY, item.desiredY));
+          for (let index = 1; index < positions.length; index += 1) {
+            positions[index] = Math.max(positions[index], positions[index - 1] + minimumGap);
+          }
+
+          if (positions.at(-1) > maximumY) {
+            positions[positions.length - 1] = maximumY;
+            for (let index = positions.length - 2; index >= 0; index -= 1) {
+              positions[index] = Math.min(positions[index], positions[index + 1] - minimumGap);
+            }
+          }
+
+          if (positions[0] < minimumY) {
+            positions[0] = minimumY;
+            for (let index = 1; index < positions.length; index += 1) {
+              positions[index] = Math.max(positions[index], positions[index - 1] + minimumGap);
+            }
+          }
+
+          markers.forEach(({ marker, desiredY }, index) => {
+            const placedY = positions[index];
+            marker.style.top = `${placedY}px`;
+
+            const connector = hotspotLayer.querySelector(
+              `.hotspot-connector[data-point-index="${CSS.escape(marker.dataset.pointIndex)}"]`
+            );
+            const distance = Math.abs(placedY - desiredY);
+            if (!connector || distance < 1) {
+              if (connector) connector.hidden = true;
+              return;
+            }
+
+            connector.hidden = false;
+            connector.style.top = `${Math.min(placedY, desiredY)}px`;
+            connector.style.height = `${distance}px`;
+          });
+        });
+      }
+
+      function makeHotspotElements([number, sourceX, sourceY], pointIndex) {
+        const side = sourceX < activeFigure.width / 2 ? "left" : "right";
+        const left = `${(sourceX / activeFigure.width) * 100}%`;
+        const top = `${(sourceY / activeFigure.height) * 100}%`;
+
+        const mask = document.createElement("span");
+        mask.className = `source-number-mask ${side}`;
+        mask.style.left = left;
+        mask.style.top = top;
+        mask.setAttribute("aria-hidden", "true");
+
+        const connector = document.createElement("span");
+        connector.className = "hotspot-connector";
+        connector.dataset.pointIndex = String(pointIndex);
+        connector.style.left = left;
+        connector.hidden = true;
+        connector.setAttribute("aria-hidden", "true");
+
         const target = document.createElement("button");
         target.type = "button";
         target.className = "hotspot";
         target.dataset.number = String(number);
-        target.style.left = `${(sourceX / activeFigure.width) * 100}%`;
-        target.style.top = `${(sourceY / activeFigure.height) * 100}%`;
+        target.dataset.side = side;
+        target.dataset.sourceY = String(sourceY);
+        target.dataset.pointIndex = String(pointIndex);
+        target.style.left = left;
+        target.style.top = top;
         target.textContent = number;
         target.setAttribute("aria-label", `Target ${number}`);
         target.addEventListener("click", () => {
@@ -1359,7 +1474,7 @@
           }
           solve(numberFromDrag, String(number), target);
         });
-        return target;
+        return [mask, connector, target];
       }
 
       function renderRound({
@@ -1381,7 +1496,10 @@
           : `${activeFigure.answers.length} visible targets`;
         figureNote.textContent = activeFigure.note;
         bank.replaceChildren(...shuffled(roundAnswers).map(makeChip));
-        hotspotLayer.replaceChildren(...(targetPoints[activeFigure.id] || []).map(makeHotspot));
+        hotspotLayer.replaceChildren(
+          ...(targetPoints[activeFigure.id] || []).flatMap(makeHotspotElements)
+        );
+        window.requestAnimationFrame(layoutHotspots);
         solved = new Set();
         selectedNumber = null;
         updateFindButton();
@@ -1466,6 +1584,9 @@
         clearTabPerfect(activeFigure.id);
         renderRound();
       });
+
+      image.addEventListener("load", layoutHotspots);
+      new ResizeObserver(layoutHotspots).observe(hotspotLayer);
 
       renderTabs();
       renderRound();
