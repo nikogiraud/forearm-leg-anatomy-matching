@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Forearm & Leg Anatomy Figure Matching</title>
+  <title>Niko's Forearm & Leg Anatomy Figure Matching</title>
   <style>
     :root {
       color-scheme: light dark;
@@ -87,52 +87,6 @@
       font-size: 0.8rem;
     }
 
-    .timer-box {
-      background: #0c1712;
-      border-color: #0c1712;
-    }
-
-    .timer-box strong {
-      font-family: "Courier New", ui-monospace, SFMono-Regular, Menlo, monospace;
-      font-variant-numeric: tabular-nums;
-      letter-spacing: 2px;
-      font-size: 1.55rem;
-      color: #3fe089;
-      text-shadow: 0 0 7px rgba(63, 224, 137, 0.55);
-    }
-
-    .timer-box span {
-      color: #7fcfa0;
-    }
-
-    .timer-box.expired {
-      background: #1c0e10;
-      border-color: #1c0e10;
-    }
-
-    .timer-box.expired strong {
-      color: #ff5d72;
-      text-shadow: 0 0 7px rgba(255, 93, 114, 0.55);
-    }
-
-    .timer-box.expired span {
-      color: #ff9aa8;
-    }
-
-    .timer-box.idle {
-      background: var(--surface-2);
-      border-color: var(--border);
-    }
-
-    .timer-box.idle strong {
-      color: var(--muted);
-      text-shadow: none;
-    }
-
-    .timer-box.idle span {
-      color: var(--muted);
-    }
-
     .figure-tabs {
       display: flex;
       flex-wrap: wrap;
@@ -208,38 +162,6 @@
       flex-wrap: wrap;
       align-items: center;
       gap: 8px;
-    }
-
-    .timer-set {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 0 4px;
-      color: var(--muted);
-      font-size: 0.82rem;
-    }
-
-    .timer-set input {
-      width: 44px;
-      min-height: 38px;
-      padding: 6px 4px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background: var(--surface-2);
-      color: var(--text);
-      font: inherit;
-      font-variant-numeric: tabular-nums;
-      text-align: center;
-    }
-
-    .timer-set .timer-sep {
-      font-weight: 700;
-      color: var(--text);
-    }
-
-    .timer-set input:focus-visible {
-      outline: 3px solid rgba(37, 99, 235, 0.3);
-      outline-offset: 1px;
     }
 
     .find-control {
@@ -624,16 +546,12 @@
   <main class="app">
     <header class="topbar">
       <div>
-        <h1>Forearm & Leg Anatomy Figure Matching</h1>
+        <h1>Niko's Forearm & Leg Anatomy Figure Matching</h1>
         <p class="subtitle">Switch tabs to study different handout figures. Drag a structure name onto its numbered target; on touch screens, tap a name and then a number. Press <u>F</u> (or use Find for me) to flash the target for the selected structure.</p>
       </div>
       <div class="score" aria-live="polite">
         <strong id="scoreValue">0 / 26</strong>
         <span id="scoreLabel">correct</span>
-      </div>
-      <div class="score timer-box" aria-live="polite">
-        <strong id="timerValue">0:00</strong>
-        <span id="timerStatusLabel">time left</span>
       </div>
     </header>
 
@@ -642,13 +560,6 @@
     <div class="toolbar">
       <div id="status" class="status" role="status" aria-live="polite">Choose a structure to begin.</div>
       <div class="toolbar-actions">
-        <div class="timer-set">
-          <label for="timerMinInput">Timer</label>
-          <input id="timerMinInput" type="number" min="0" max="999" step="1" inputmode="numeric" aria-label="Minutes">
-          <span class="timer-sep" aria-hidden="true">:</span>
-          <input id="timerSecInput" type="number" min="0" max="59" step="1" inputmode="numeric" aria-label="Seconds">
-          <button id="timerSetButton" class="control" type="button">Set</button>
-        </div>
         <button id="shuffleButton" class="control" type="button">Shuffle names</button>
         <button id="retryReviewButton" class="control" type="button" disabled>Retry missed + Find (0)</button>
         <button id="resetButton" class="control" type="button">Reset round</button>
@@ -670,12 +581,10 @@
 
       <aside class="practice-panel" aria-label="Matching controls">
         <h2>Structure bank</h2>
-        <p class="section-note">Select or copy a name. Click it to answer, drag it with the grip, or paste it onto a numbered target.</p>
+        <p class="section-note">Select a structure name, then click its number on the figure—or drag the name onto the numbered circle.</p>
         <button id="findButton" class="control find-control" type="button" aria-keyshortcuts="F" disabled><u>F</u>ind for me</button>
         <div id="labelBank" class="label-bank"></div>
 
-        <h3>Numbered targets</h3>
-        <div id="targetGrid" class="target-grid"></div>
         <div class="progress-track" aria-hidden="true"><div id="progressBar" class="progress-bar"></div></div>
       </aside>
     </section>
@@ -1110,7 +1019,6 @@
       const figureCount = document.getElementById("figureCount");
       const figureNote = document.getElementById("figureNote");
       const bank = document.getElementById("labelBank");
-      const targets = document.getElementById("targetGrid");
       const scoreValue = document.getElementById("scoreValue");
       const scoreLabel = document.getElementById("scoreLabel");
       const progressBar = document.getElementById("progressBar");
@@ -1119,12 +1027,6 @@
       const shuffleButton = document.getElementById("shuffleButton");
       const retryReviewButton = document.getElementById("retryReviewButton");
       const resetButton = document.getElementById("resetButton");
-      const timerValue = document.getElementById("timerValue");
-      const timerStatusLabel = document.getElementById("timerStatusLabel");
-      const timerBox = timerValue.closest(".timer-box");
-      const timerMinInput = document.getElementById("timerMinInput");
-      const timerSecInput = document.getElementById("timerSecInput");
-      const timerSetButton = document.getElementById("timerSetButton");
 
       let activeFigure = figures[0];
       let roundAnswers = activeFigure.answers;
@@ -1134,109 +1036,7 @@
       let retryingMissed = false;
       let hintTimer = null;
       let pointerDrag = null;
-      let timerHandle = null;
-      let timerRemaining = 0;
-      let timeExpired = false;
-      let timerPhase = "idle"; // "idle" | "running" | "expired" | "stopped"
-      let customTimerSeconds = null;
       const quizDragType = "application/x-anatomy-structure-number";
-
-      function defaultTimerSeconds(targetCount) {
-        return Math.max(5, targetCount * 60);
-      }
-
-      function formatClock(totalSeconds) {
-        const safeSeconds = Math.max(0, Math.round(totalSeconds));
-        const minutes = Math.floor(safeSeconds / 60);
-        const seconds = safeSeconds % 60;
-        return `${minutes}:${String(seconds).padStart(2, "0")}`;
-      }
-
-      function updateTimerDisplay() {
-        timerValue.textContent = formatClock(timerRemaining);
-        timerBox.classList.toggle("expired", timerPhase === "expired");
-        timerBox.classList.toggle("idle", timerPhase === "idle");
-        if (timerPhase === "expired") {
-          timerStatusLabel.textContent = "time's up";
-        } else if (timerPhase === "idle") {
-          timerStatusLabel.textContent = "press Set to start";
-        } else {
-          timerStatusLabel.textContent = "time left";
-        }
-      }
-
-      function stopTimer() {
-        if (timerHandle) window.clearInterval(timerHandle);
-        timerHandle = null;
-        if (timerPhase === "running") timerPhase = "stopped";
-      }
-
-      // Loads a duration into the clock and displays it, but does NOT start
-      // the countdown. The countdown only begins once the person presses Set.
-      function prepareTimer(totalSeconds) {
-        stopTimer();
-        const safeSeconds = Math.max(5, Math.round(totalSeconds));
-        timerRemaining = safeSeconds;
-        timeExpired = false;
-        timerPhase = "idle";
-        timerMinInput.value = Math.floor(safeSeconds / 60);
-        timerSecInput.value = safeSeconds % 60;
-        updateTimerDisplay();
-      }
-
-      function prepareTimerForCurrentRound() {
-        const seconds = customTimerSeconds !== null
-          ? customTimerSeconds
-          : defaultTimerSeconds(roundAnswers.length);
-        prepareTimer(seconds);
-      }
-
-      // Actually starts the countdown. Only called when the person presses
-      // the Set button (or presses Enter in one of the timer fields).
-      function startTimer(totalSeconds) {
-        stopTimer();
-        const safeSeconds = Math.max(5, Math.round(totalSeconds));
-        timerRemaining = safeSeconds;
-        timeExpired = false;
-        timerPhase = "running";
-        timerMinInput.value = Math.floor(safeSeconds / 60);
-        timerSecInput.value = safeSeconds % 60;
-        updateTimerDisplay();
-        timerHandle = window.setInterval(() => {
-          timerRemaining -= 1;
-          if (timerRemaining <= 0) {
-            timerRemaining = 0;
-            stopTimer();
-            if (!timeExpired) {
-              timeExpired = true;
-              timerPhase = "expired";
-              setStatus("Time's up! Keep matching the remaining targets if you like, but this round can no longer count as a perfect completion.", "wrong");
-            }
-          }
-          updateTimerDisplay();
-        }, 1000);
-      }
-
-      function applyCustomTimerInput() {
-        const parsedMin = parseInt(timerMinInput.value, 10);
-        const parsedSec = parseInt(timerSecInput.value, 10);
-        const minutes = Number.isFinite(parsedMin) ? Math.max(0, parsedMin) : 0;
-        const seconds = Number.isFinite(parsedSec) ? Math.max(0, parsedSec) : 0;
-        const totalSeconds = Math.max(5, (minutes * 60) + seconds);
-        customTimerSeconds = totalSeconds;
-        startTimer(totalSeconds);
-        setStatus(`Timer started: ${formatClock(totalSeconds)}.`);
-      }
-
-      timerSetButton.addEventListener("click", applyCustomTimerInput);
-      [timerMinInput, timerSecInput].forEach(input => {
-        input.addEventListener("keydown", event => {
-          if (event.key === "Enter") {
-            event.preventDefault();
-            applyCustomTimerInput();
-          }
-        });
-      });
 
       function shuffled(items) {
         const copy = [...items];
@@ -1410,9 +1210,7 @@
       function flashSelectedTarget() {
         if (!selectedNumber) return;
         clearHint();
-        const hotspotsForNumber = targetGridFor(selectedNumber).concat(
-          [...hotspotLayer.querySelectorAll(`[data-number="${CSS.escape(selectedNumber)}"]`)]
-        );
+        const hotspotsForNumber = [...hotspotLayer.querySelectorAll(`[data-number="${CSS.escape(selectedNumber)}"]`)];
         if (!hotspotsForNumber.length) return;
         addToRetryPool(selectedNumber);
         hotspotsForNumber.forEach(element => element.classList.add("hint"));
@@ -1454,10 +1252,6 @@
         updateRetryButton();
 
         const name = answers.get(targetNumber);
-        targetGridFor(targetNumber).forEach(target => {
-          target.classList.add("solved");
-          target.setAttribute("aria-disabled", "true");
-        });
         hotspotLayer.querySelectorAll(`[data-number="${CSS.escape(targetNumber)}"]`).forEach(hotspot => {
           hotspot.classList.add("solved");
           hotspot.setAttribute("aria-disabled", "true");
@@ -1474,11 +1268,8 @@
         clearSelection();
         updateScore();
         if (solved.size === roundAnswers.length) {
-          stopTimer();
           if (retryPool.size) {
             setStatus(`Round complete — retry the ${retryPool.size} ${retryPool.size === 1 ? "structure" : "structures"} missed or revealed with Find during this attempt.`, "wrong");
-          } else if (timeExpired) {
-            setStatus(`Round complete with no misses, but time ran out — this attempt won't count as a perfect completion.`, "wrong");
           } else {
             setStatus(`Perfect — all ${roundAnswers.length} ${retryingMissed ? "retry" : "visible"} targets matched without a miss or Find hint.`, "correct");
             if (!retryingMissed) markTabPerfect(activeFigure.id);
@@ -1496,10 +1287,6 @@
       function clearTabPerfect(figureId) {
         const tab = tabs.querySelector(`.figure-tab[data-figure="${CSS.escape(figureId)}"]`);
         if (tab) tab.classList.remove("perfect");
-      }
-
-      function targetGridFor(number) {
-        return [...targets.querySelectorAll(`[data-number="${CSS.escape(String(number))}"]`)];
       }
 
       function makeChip([number, name]) {
@@ -1533,48 +1320,6 @@
         });
         dragHandle.addEventListener("pointerdown", event => startPointerDrag(event, chip, dragHandle, number, name));
         return chip;
-      }
-
-      function makeTarget([number]) {
-        const target = document.createElement("button");
-        target.type = "button";
-        target.className = "target";
-        target.dataset.number = String(number);
-        target.innerHTML = `<span class="target-number">${number}</span><span class="target-text">Drop answer here</span>`;
-        target.setAttribute("aria-label", `Target ${number}`);
-        target.title = "Select or copy this text; focus the target and paste a structure name to answer";
-        target.addEventListener("click", () => {
-          if (hasSelectedTextWithin(target)) return;
-          if (solved.has(String(number))) {
-            setStatus(`${number}: ${answerMap().get(String(number))}`, "correct");
-            return;
-          }
-          if (!selectedNumber) {
-            setStatus("Choose a structure name first, then choose a numbered target.");
-            return;
-          }
-          solve(selectedNumber, String(number), target);
-        });
-        target.addEventListener("dragover", event => {
-          event.preventDefault();
-          event.dataTransfer.dropEffect = "move";
-        });
-        target.addEventListener("drop", event => {
-          event.preventDefault();
-          const numberFromDrag = answerNumberFromTransfer(event.dataTransfer);
-          if (!numberFromDrag) {
-            markWrong(target);
-            setStatus("Dropped text does not match a structure name in this figure.", "wrong");
-            return;
-          }
-          solve(numberFromDrag, String(number), target);
-        });
-        target.addEventListener("paste", event => {
-          const pastedText = event.clipboardData?.getData("text/plain") || "";
-          event.preventDefault();
-          solveTransferredText(pastedText, String(number), target, "Pasted");
-        });
-        return target;
       }
 
       function makeHotspot([number, sourceX, sourceY]) {
@@ -1626,11 +1371,6 @@
         roundAnswers = answers;
         retryingMissed = retryMode;
         retryPool = new Set();
-        // Always fall back to the 1-minute-per-target default when a new
-        // round begins (tab switch, Reset round, or Retry missed + Find).
-        // Any custom time the person set only applies within the round they
-        // set it for.
-        customTimerSeconds = null;
         image.src = activeFigure.image;
         image.width = activeFigure.width;
         image.height = activeFigure.height;
@@ -1641,14 +1381,12 @@
           : `${activeFigure.answers.length} visible targets`;
         figureNote.textContent = activeFigure.note;
         bank.replaceChildren(...shuffled(roundAnswers).map(makeChip));
-        targets.replaceChildren(...roundAnswers.map(makeTarget));
         hotspotLayer.replaceChildren(...(targetPoints[activeFigure.id] || []).map(makeHotspot));
         solved = new Set();
         selectedNumber = null;
         updateFindButton();
         updateRetryButton();
         updateScore();
-        prepareTimerForCurrentRound();
         setStatus(statusMessage);
       }
 
