@@ -281,6 +281,11 @@
       transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
     }
 
+    .hotspot.line-aligned-dense {
+      width: 30px;
+      font-size: .85rem;
+    }
+
     .hotspot:hover,
     .hotspot.drag-over {
       transform: translate(-50%, -50%) scale(1.13);
@@ -1354,10 +1359,29 @@
 
       function layoutHotspots() {
         const layerHeight = hotspotLayer.clientHeight;
-        if (!layerHeight) return;
+        const layerWidth = hotspotLayer.clientWidth;
+        if (!layerHeight || !layerWidth) return;
 
         const renderedHotspots = [...hotspotLayer.querySelectorAll(".hotspot")];
         if (!renderedHotspots.length) return;
+
+        const lineAlignedDense = renderedHotspots
+          .filter(marker => marker.classList.contains("line-aligned-dense"))
+          .sort((a, b) => Number(a.dataset.sourceY) - Number(b.dataset.sourceY));
+
+        lineAlignedDense.forEach((marker, index) => {
+          const desiredX = (Number(marker.dataset.sourceX) / activeFigure.width) * layerWidth;
+          const desiredY = (Number(marker.dataset.sourceY) / activeFigure.height) * layerHeight;
+          // Alternate two columns while preserving the exact leader-line height.
+          // Starting the first marker in the inner column also clears target 8 above it.
+          marker.style.left = `${desiredX + (index % 2 === 0 ? 34 : 0)}px`;
+          marker.style.top = `${desiredY}px`;
+
+          const connector = hotspotLayer.querySelector(
+            `.hotspot-connector[data-point-index="${CSS.escape(marker.dataset.pointIndex)}"]`
+          );
+          if (connector) connector.hidden = true;
+        });
 
         const markerSize = Math.max(
           ...renderedHotspots.map(marker => marker.getBoundingClientRect().width),
@@ -1369,7 +1393,10 @@
 
         ["left", "right"].forEach(side => {
           const markers = renderedHotspots
-            .filter(marker => marker.dataset.side === side)
+            .filter(marker => (
+              marker.dataset.side === side &&
+              !marker.classList.contains("line-aligned-dense")
+            ))
             .map(marker => ({
               marker,
               desiredY: (Number(marker.dataset.sourceY) / activeFigure.height) * layerHeight
@@ -1419,6 +1446,11 @@
 
       function makeHotspotElements([number, sourceX, sourceY], pointIndex) {
         const side = sourceX < activeFigure.width / 2 ? "left" : "right";
+        const isLineAlignedDense = (
+          activeFigure.id === "forearm-superficial" &&
+          Number(number) >= 9 &&
+          Number(number) <= 14
+        );
         const left = `${(sourceX / activeFigure.width) * 100}%`;
         const top = `${(sourceY / activeFigure.height) * 100}%`;
 
@@ -1438,8 +1470,10 @@
         const target = document.createElement("button");
         target.type = "button";
         target.className = "hotspot";
+        if (isLineAlignedDense) target.classList.add("line-aligned-dense");
         target.dataset.number = String(number);
         target.dataset.side = side;
+        target.dataset.sourceX = String(sourceX);
         target.dataset.sourceY = String(sourceY);
         target.dataset.pointIndex = String(pointIndex);
         target.style.left = left;
