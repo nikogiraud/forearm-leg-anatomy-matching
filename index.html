@@ -278,8 +278,11 @@
     .hotspot {
       position: absolute;
       z-index: 3;
+      display: grid;
+      place-items: center;
       width: clamp(30px, 5%, 36px);
       aspect-ratio: 1;
+      padding: 0;
       transform: translate(-50%, -50%);
       border: 2px solid var(--primary);
       border-radius: 50%;
@@ -287,6 +290,7 @@
       color: var(--primary);
       font-size: clamp(0.66rem, 1.2vw, 0.78rem);
       line-height: 1;
+      text-align: center;
       font-weight: 700;
       cursor: pointer;
       pointer-events: auto;
