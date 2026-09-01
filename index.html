@@ -234,6 +234,13 @@
       pointer-events: none;
     }
 
+    .source-obscurer {
+      position: absolute;
+      z-index: 0;
+      background: #ffffff;
+      pointer-events: none;
+    }
+
     .source-number-mask {
       position: absolute;
       z-index: 1;
@@ -995,6 +1002,42 @@
             [7, "Great saphenous vein"],
             [8, "Dorsal venous arch of foot"]
           ]
+        },
+        {
+          id: "lower-limb-nerves",
+          tab: "Lower limb nerves",
+          title: "Lumbosacral plexus & nerves of the lower limb",
+          image: "assets/lower-limb-nerves.png",
+          width: 969,
+          height: 1205,
+          note: "Lumbosacral plexus and peripheral nerves of the lower limb. The printed answer key is hidden for practice.",
+          obscurers: [
+            { x: 455, y: 0, width: 514, height: 430 }
+          ],
+          answers: [
+            [1, "Subcostal nerve"],
+            [2, "Iliohypogastric nerve"],
+            [3, "Ilioinguinal nerve"],
+            [4, "Lateral femoral cutaneous nerve"],
+            [5, "Genitofemoral nerve"],
+            [6, "Pudendal nerve"],
+            [7, "Femoral nerve"],
+            [8, "Obturator nerve"],
+            [9, "Sciatic nerve"],
+            [10, "Lumbar plexus (L1–L4)"],
+            [11, "Sacral plexus (L4–S4)"],
+            [12, "Pudendal plexus (S2–S4)"],
+            [13, "Inferior cluneal nerve"],
+            [14, "Posterior femoral cutaneous nerve"],
+            [15, "Common peroneal nerve"],
+            [16, "Tibial nerve"],
+            [17, "Lateral sural cutaneous nerve"],
+            [18, "Medial and lateral plantar nerves"],
+            [19, "Saphenous nerve"],
+            [20, "Infrapatellar branch of saphenous nerve"],
+            [21, "Deep peroneal nerve"],
+            [22, "Superficial peroneal nerve"]
+          ]
         }
       ];
 
@@ -1039,6 +1082,12 @@
         ],
         "veins-ant": [
           [1, 36.5, 108.5], [2, 38, 197.5], [3, 37.5, 456.5], [4, 37.5, 969.5], [4, 38, 1217.5], [5, 445, 162.5], [6, 445.5, 214.5], [7, 445, 389.5], [7, 445, 1092.5], [8, 445, 1292.5]
+        ],
+        "lower-limb-nerves": [
+          [10, 39.5, 114.5, "left"], [11, 40, 176.5, "left"], [6, 41, 319.5, "left"], [13, 40.5, 375, "left"], [9, 40.5, 409.5, "left"], [14, 40.5, 446.5, "left"], [15, 41, 681.5, "left"], [16, 41, 796.5, "left"], [17, 41, 877, "left"], [18, 41, 1163, "left"],
+          [2, 367, 114, "right"], [3, 367, 158.5, "right"], [5, 367, 205, "right"], [4, 367, 238, "right"], [8, 367, 262, "right"], [7, 367, 329.5, "right"], [19, 372.5, 540, "right"], [20, 374, 777.5, "right"], [21, 373.5, 925.5, "right"], [22, 375, 1011.5, "right"],
+          [1, 499.5, 848, "left"], [2, 500, 882.5, "left"], [3, 501, 912, "left"], [4, 501, 976.5, "left"], [5, 501.5, 1018.5, "left"], [6, 502, 1065, "left"], [7, 502.5, 1099.5, "left"], [8, 510, 1131.5, "left"], [9, 511.5, 1183.5, "left"],
+          [10, 912.5, 883.5, "right"], [11, 914, 990.5, "right"], [12, 915, 1034.5, "right"]
         ]
       };
 
@@ -1401,8 +1450,8 @@
         });
       }
 
-      function makeHotspotElements([number, sourceX, sourceY], pointIndex) {
-        const side = sourceX < activeFigure.width / 2 ? "left" : "right";
+      function makeHotspotElements([number, sourceX, sourceY, sideHint], pointIndex) {
+        const side = sideHint || (sourceX < activeFigure.width / 2 ? "left" : "right");
         const left = `${(sourceX / activeFigure.width) * 100}%`;
         const top = `${(sourceY / activeFigure.height) * 100}%`;
 
@@ -1462,6 +1511,19 @@
         return [mask, connector, target];
       }
 
+      function makeFigureObscurers() {
+        return (activeFigure.obscurers || []).map(({ x, y, width, height }) => {
+          const obscurer = document.createElement("span");
+          obscurer.className = "source-obscurer";
+          obscurer.style.left = `${(x / activeFigure.width) * 100}%`;
+          obscurer.style.top = `${(y / activeFigure.height) * 100}%`;
+          obscurer.style.width = `${(width / activeFigure.width) * 100}%`;
+          obscurer.style.height = `${(height / activeFigure.height) * 100}%`;
+          obscurer.setAttribute("aria-hidden", "true");
+          return obscurer;
+        });
+      }
+
       function renderRound({
         answers = activeFigure.answers,
         retryMode = false,
@@ -1482,6 +1544,7 @@
         figureNote.textContent = activeFigure.note;
         bank.replaceChildren(...shuffled(roundAnswers).map(makeChip));
         hotspotLayer.replaceChildren(
+          ...makeFigureObscurers(),
           ...(targetPoints[activeFigure.id] || []).flatMap(makeHotspotElements)
         );
         window.requestAnimationFrame(layoutHotspots);
