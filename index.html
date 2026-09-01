@@ -259,6 +259,12 @@
       transform: translate(-28%, -50%);
     }
 
+    .source-number-mask.compact {
+      width: 22px;
+      height: 14px;
+      border-radius: 4px;
+    }
+
     .hotspot-connector {
       position: absolute;
       z-index: 2;
@@ -286,6 +292,20 @@
       pointer-events: auto;
       box-shadow: 0 2px 8px rgba(0,0,0,.18);
       transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+    }
+
+    .hotspot.compact {
+      width: 14px;
+      border-width: 1px;
+      font-size: .45rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,.18);
+    }
+
+    .hotspot.compact::after {
+      content: "";
+      position: absolute;
+      inset: -7px;
+      border-radius: 50%;
     }
 
     .hotspot:hover,
@@ -1011,6 +1031,8 @@
           width: 969,
           height: 1205,
           note: "Lumbosacral plexus and peripheral nerves of the lower limb. The printed answer key is hidden for practice.",
+          exactTargets: true,
+          compactTargets: true,
           obscurers: [
             { x: 455, y: 0, width: 514, height: 430 }
           ],
@@ -1086,7 +1108,7 @@
         "lower-limb-nerves": [
           [10, 39.5, 114.5, "left"], [11, 40, 176.5, "left"], [6, 41, 319.5, "left"], [13, 40.5, 375, "left"], [9, 40.5, 409.5, "left"], [14, 40.5, 446.5, "left"], [15, 41, 681.5, "left"], [16, 41, 796.5, "left"], [17, 41, 877, "left"], [18, 41, 1163, "left"],
           [2, 367, 114, "right"], [3, 367, 158.5, "right"], [5, 367, 205, "right"], [4, 367, 238, "right"], [8, 367, 262, "right"], [7, 367, 329.5, "right"], [19, 372.5, 540, "right"], [20, 374, 777.5, "right"], [21, 373.5, 925.5, "right"], [22, 375, 1011.5, "right"],
-          [1, 499.5, 848, "left"], [2, 500, 882.5, "left"], [3, 501, 912, "left"], [4, 501, 976.5, "left"], [5, 501.5, 1018.5, "left"], [6, 502, 1065, "left"], [7, 502.5, 1099.5, "left"], [8, 510, 1131.5, "left"], [9, 511.5, 1183.5, "left"],
+          [1, 499.5, 848, "left"], [2, 500, 882.5, "left"], [3, 501, 912, "left"], [4, 501, 976.5, "left"], [5, 501.5, 1018.5, "left"], [6, 502, 1065, "left"], [7, 502.5, 1090.5, "left"], [8, 510, 1131.5, "left"], [9, 511.5, 1183.5, "left"],
           [10, 912.5, 883.5, "right"], [11, 914, 990.5, "right"], [12, 915, 1034.5, "right"]
         ]
       };
@@ -1409,6 +1431,21 @@
         const renderedHotspots = [...hotspotLayer.querySelectorAll(".hotspot")];
         if (!renderedHotspots.length) return;
 
+        if (activeFigure.exactTargets) {
+          renderedHotspots.forEach(marker => {
+            const desiredX = (Number(marker.dataset.sourceX) / activeFigure.width) * layerWidth;
+            const desiredY = (Number(marker.dataset.sourceY) / activeFigure.height) * layerHeight;
+            marker.style.left = `${desiredX}px`;
+            marker.style.top = `${desiredY}px`;
+
+            const connector = hotspotLayer.querySelector(
+              `.hotspot-connector[data-point-index="${CSS.escape(marker.dataset.pointIndex)}"]`
+            );
+            if (connector) connector.hidden = true;
+          });
+          return;
+        }
+
         const markerSize = Math.max(
           ...renderedHotspots.map(marker => marker.getBoundingClientRect().width)
         );
@@ -1457,6 +1494,7 @@
 
         const mask = document.createElement("span");
         mask.className = `source-number-mask ${side}`;
+        if (activeFigure.compactTargets) mask.classList.add("compact");
         mask.style.left = left;
         mask.style.top = top;
         mask.setAttribute("aria-hidden", "true");
@@ -1471,6 +1509,7 @@
         const target = document.createElement("button");
         target.type = "button";
         target.className = "hotspot";
+        if (activeFigure.compactTargets) target.classList.add("compact");
         target.dataset.number = String(number);
         target.dataset.side = side;
         target.dataset.sourceX = String(sourceX);
