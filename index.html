@@ -943,6 +943,9 @@
           width: 520,
           height: 1615,
           note: "Flexor digitorum brevis and flexor hallucis longus muscles have been removed.",
+          answerTargets: {
+            11: [11, 17]
+          },
           answers: [
             [1, "Medial condyle of femur"],
             [2, "Tibia"],
@@ -954,13 +957,12 @@
             [8, "Lateral condyle of femur"],
             [9, "Head of fibula"],
             [10, "Tibialis posterior muscle"],
-            [11, "Tendon of flexor digitorum longus muscle"],
+            [11, "Tendon(s) of flexor digitorum longus muscle"],
             [12, "Flexor retinaculum"],
             [13, "Calcaneal or Achilles tendon"],
             [14, "Calcaneal tuberosity"],
             [15, "Crossing of tendons in the sole"],
-            [16, "Quadratus plantae muscle"],
-            [17, "Tendons of flexor digitorum longus muscle"]
+            [16, "Quadratus plantae muscle"]
           ]
         },
         {
@@ -1168,6 +1170,25 @@
         return new Map(activeFigure.answers.map(([number, name]) => [String(number), name]));
       }
 
+      function targetNumbersForAnswer(number) {
+        const answerNumber = String(number);
+        return (activeFigure.answerTargets?.[answerNumber] || [answerNumber]).map(String);
+      }
+
+      function answerNumberForTarget(number) {
+        const targetNumber = String(number);
+        for (const [answerNumber] of activeFigure.answers) {
+          if (targetNumbersForAnswer(answerNumber).includes(targetNumber)) return String(answerNumber);
+        }
+        return targetNumber;
+      }
+
+      function hotspotsForAnswer(number) {
+        return targetNumbersForAnswer(number).flatMap(targetNumber =>
+          [...hotspotLayer.querySelectorAll(`[data-number="${CSS.escape(targetNumber)}"]`)]
+        );
+      }
+
       function normalizeStructureText(value) {
         return String(value || "").trim().replace(/\s+/g, " ").toLowerCase();
       }
@@ -1327,7 +1348,7 @@
       function flashSelectedTarget() {
         if (!selectedNumber) return;
         clearHint();
-        const hotspotsForNumber = [...hotspotLayer.querySelectorAll(`[data-number="${CSS.escape(selectedNumber)}"]`)];
+        const hotspotsForNumber = hotspotsForAnswer(selectedNumber);
         if (!hotspotsForNumber.length) return;
         addToRetryPool(selectedNumber);
         hotspotsForNumber.forEach(element => element.classList.add("hint"));
@@ -1355,25 +1376,26 @@
           setStatus("That name isn't part of this figure.", "wrong");
           return;
         }
-        if (labelNumber !== targetNumber) {
+        const validTargetNumbers = targetNumbersForAnswer(labelNumber);
+        if (!validTargetNumbers.includes(targetNumber)) {
           markWrong(targetElement);
-          addToRetryPool(labelNumber, targetNumber);
+          addToRetryPool(labelNumber, answerNumberForTarget(targetNumber));
           setStatus(`Not quite: ${answers.get(labelNumber)} is not ${targetNumber}.`, "wrong");
           return;
         }
-        solved.add(targetNumber);
+        solved.add(labelNumber);
         // Intentionally NOT removing targetNumber from retryPool here: once a
         // structure has been missed or revealed with Find during this round,
         // it stays flagged for "Retry missed + Find" until the round is reset,
         // even if the person goes on to answer it correctly.
         updateRetryButton();
 
-        const name = answers.get(targetNumber);
-        hotspotLayer.querySelectorAll(`[data-number="${CSS.escape(targetNumber)}"]`).forEach(hotspot => {
+        const name = answers.get(labelNumber);
+        hotspotsForAnswer(labelNumber).forEach(hotspot => {
           hotspot.classList.add("solved");
           hotspot.setAttribute("aria-disabled", "true");
         });
-        const chip = bank.querySelector(`.label-chip[data-number="${CSS.escape(targetNumber)}"]`);
+        const chip = bank.querySelector(`.label-chip[data-number="${CSS.escape(labelNumber)}"]`);
         if (chip) {
           chip.classList.remove("selected");
           chip.classList.add("solved");
@@ -1392,7 +1414,8 @@
             if (!retryingMissed) markTabPerfect(activeFigure.id);
           }
         } else {
-          setStatus(`Correct: ${targetNumber} is ${name}.`, "correct");
+          const matchedTargets = validTargetNumbers.join(" and ");
+          setStatus(`Correct: ${matchedTargets} ${validTargetNumbers.length === 1 ? "is" : "are"} ${name}.`, "correct");
         }
       }
 
@@ -1536,8 +1559,9 @@
         target.textContent = number;
         target.setAttribute("aria-label", `Target ${number}`);
         target.addEventListener("click", () => {
-          if (solved.has(String(number))) {
-            setStatus(`${number}: ${answerMap().get(String(number))}`, "correct");
+          const answerNumber = answerNumberForTarget(number);
+          if (solved.has(answerNumber)) {
+            setStatus(`${targetNumbersForAnswer(answerNumber).join(" and ")}: ${answerMap().get(answerNumber)}`, "correct");
             return;
           }
           if (!selectedNumber) {
