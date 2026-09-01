@@ -187,6 +187,16 @@
       gap: 22px;
     }
 
+    @media (min-width: 1024px) {
+      .game.wide-figure {
+        grid-template-columns: minmax(620px, 680px) minmax(330px, 1fr);
+      }
+
+      .game.wide-figure .figure-panel {
+        margin: 0;
+      }
+    }
+
     .figure-panel,
     .practice-panel {
       border: 1px solid var(--border);
@@ -1037,6 +1047,7 @@
           note: "Lumbosacral plexus and peripheral nerves of the lower limb. The printed answer key is hidden for practice.",
           exactTargets: true,
           compactTargets: true,
+          wideFigure: true,
           obscurers: [
             { x: 455, y: 0, width: 514, height: 430 }
           ],
@@ -1118,6 +1129,7 @@
       };
 
       const tabs = document.getElementById("figureTabs");
+      const game = document.querySelector(".game");
       const image = document.getElementById("figureImage");
       const hotspotLayer = document.getElementById("hotspotLayer");
       const figureTitle = document.getElementById("figureTitle");
@@ -1576,6 +1588,7 @@
         roundAnswers = answers;
         retryingMissed = retryMode;
         retryPool = new Set();
+        game.classList.toggle("wide-figure", Boolean(activeFigure.wideFigure));
         image.src = activeFigure.image;
         image.width = activeFigure.width;
         image.height = activeFigure.height;
